@@ -1,0 +1,20 @@
+{
+	# log
+}
+
+# port 5173 use/expose by vite
+:80 {
+	@api path /api* /healthz
+	reverse_proxy @api backend:3000
+
+	# frontend Vite build container web
+	reverse_proxy web:5173
+}
+
+# HTTPS auto (si domaine public pointe le VPS)
+# {$DOMAIN} {
+#   tls {$EMAIL}
+#   @api path /api* /healthz
+#   reverse_proxy @api backend:3000
+#   reverse_proxy web:5173
+#}

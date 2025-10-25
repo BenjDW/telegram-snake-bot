@@ -1,0 +1,60 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app}
+      POSTGRES_DB: ${POSTGRES_DB:-snake}
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app} -d ${POSTGRES_DB:-snake}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      NODE_ENV: production
+      BOT_TOKEN: ${BOT_TOKEN}
+      WEBAPP_URL: ${WEBAPP_URL}
+      DATABASE_URL: postgres://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-app}@db:5432/${POSTGRES_DB:-snake}
+      APP_URL: http://backend:3000
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./web
+    environment:
+      VITE_API_BASE: ${PUBLIC_API_BASE:-/api}
+    depends_on:
+      - backend
+
+  caddy:
+    image: caddy:2.8
+    ports:
+      - "80:80"
+      # a décommente si configuration domaine + HTTPS auto
+      # - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:-}
+      EMAIL: ${EMAIL:-}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+      - caddyconfig:/config
+    depends_on:
+      - web
+      - backend
+
+volumes:
+  dbdata:
+  caddydata:
+  caddyconfig:
