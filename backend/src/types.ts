@@ -1,0 +1,1 @@
+//define interface and types from telegram
