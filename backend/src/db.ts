@@ -6,7 +6,7 @@ const pool = new Pool({
 
 export const db = {
   pool,
-  async upsertUser(u: { telegram_id: number; username?: string; first_name?: string; last_name?: string; }) {
+  async upsertUser(u: { telegram_id: number; username?: string | undefined; first_name?: string; last_name?: string | undefined; }) {
     const q = `
       INSERT INTO users (telegram_id, username, first_name, last_name)
       VALUES ($1,$2,$3,$4)
@@ -17,7 +17,7 @@ export const db = {
     const { rows } = await pool.query(q, [u.telegram_id, u.username, u.first_name, u.last_name]);
     return rows[0];
   },
-  async getOrCreateUserByTelegramId(tid: number, profile?: {username?: string; first_name?: string; last_name?: string}) {
+  async getOrCreateUserByTelegramId(tid: number, profile?: {username?: string | undefined; first_name?: string; last_name?: string | undefined}) {
     return this.upsertUser({ telegram_id: tid, ...profile });
   },
   async addScore(userId: number, score: number) {
